@@ -1,0 +1,132 @@
+# MicroSim Default Scenario
+
+world:
+  size: [100.0, 100.0] # meters (x, y)
+  resolution: 0.1 # meters per grid cell (finer detail: was 0.5m, now 0.1m)
+
+robots:
+  drone:
+    initial_pose:
+      x: 40.0
+      y: -40.0
+      z: 1.0
+      yaw: 0.0
+    max_velocity: 3.0
+    max_accel: 2.0
+
+  rover:
+    initial_pose:
+      x: 40.0
+      y: 40.0
+      theta: 0.0
+    max_velocity: 1.0
+    max_omega: 1.57
+
+sensors:
+  gps:
+    rate_hz: 10.0
+    noise_std: 0.1 # meters
+
+  range:
+    rate_hz: 20.0
+    max_range: 10.0
+    noise_std: 0.05
+
+  camera:
+    width: 256
+    height: 256
+    fov_deg: 60.0
+    rate_hz: 10.0  # Was 2.0 Hz - increased for responsive visualization
+
+radio:
+  max_range: 100.0
+  base_latency: 0.05 # seconds
+  jitter: 0.01
+  packet_loss: 0.01
+
+# Víctimas + Obstáculos geométricos
+# Víctimas: Red (obstacle)=Crítico, Orange (hazard)=Herido, Dark Green (target)=Seguro (círculos)
+# Obstáculos: Brown (building), Magenta (debris), Yellow (water), Gray (vehicle) (todos cuadrados)
+# Todas las posiciones están espaciadas para evitar solapamiento
+# Rover está en (40, 40), Drone está en (40, -40), evitando objetos cerca de esas posiciones
+features:
+  # ========== VÍCTIMAS (7 círculos) ==========
+  # Distribuidas con al menos 8m de separación y 12m de distancia a robots
+  # 3 críticas (rojo), 2 heridas (naranja), 2 seguras (verde oscuro)
+  - type: obstacle  # Rojo - Crítico
+    position: [-35.0, -30.0]
+    radius: 2.0
+    height: 0.5
+  - type: hazard  # Naranja - Herido
+    position: [-15.0, -35.0]
+    radius: 2.0
+    height: 0.5
+  - type: target  # Verde oscuro - Seguro
+    position: [10.0, -30.0]
+    radius: 2.0
+    height: 0.5
+  - type: obstacle  # Rojo - Crítico
+    position: [-25.0, 5.0]
+    radius: 2.0
+    height: 0.5
+  - type: hazard  # Naranja - Herido
+    position: [25.0, -15.0]
+    radius: 2.0
+    height: 0.5
+  - type: target  # Verde oscuro - Seguro
+    position: [-20.0, -20.0]
+    radius: 2.0
+    height: 0.5
+  - type: obstacle  # Rojo - Crítico
+    position: [0.0, 10.0]
+    radius: 2.0
+    height: 0.5
+
+  # ========== OBSTÁCULOS GEOMÉTRICOS (10 cuadrados) ==========
+  # Edificios marrones (cuadrados grandes) - 3 unidades
+  - type: building  # Marrón - Cuadrados (edificios/estructuras)
+    position: [-40.0, 15.0]
+    radius: 3.2
+    height: 7.2
+  - type: building  # Marrón - Cuadrados
+    position: [20.0, -20.0]
+    radius: 3.2
+    height: 7.2
+  - type: building  # Marrón - Cuadrados
+    position: [-15.0, 30.0]
+    radius: 3.0
+    height: 7.0
+
+  # Escombros magenta (cuadrados medianos) - 3 unidades
+  - type: debris  # Magenta - Cuadrados (escombros)
+    position: [-10.0, 25.0]
+    radius: 2.3
+    height: 3.2
+  - type: debris  # Magenta - Cuadrados
+    position: [15.0, -10.0]
+    radius: 2.3
+    height: 3.2
+  - type: debris  # Magenta - Cuadrados
+    position: [30.0, 15.0]
+    radius: 2.0
+    height: 3.0
+
+  # Árboles amarillos (cuadrados medianos) - 2 unidades
+  - type: water  # Amarillo - Cuadrados (árboles)
+    position: [-30.0, -15.0]
+    radius: 2.5
+    height: 5.5
+  - type: water  # Amarillo - Cuadrados (árboles)
+    position: [5.0, 20.0]
+    radius: 2.5
+    height: 5.5
+
+  # Vehículos grises (cuadrados pequeños) - 2 unidades
+  - type: vehicle  # Gris oscuro - Cuadrados (vehículos)
+    position: [-5.0, -5.0]
+    radius: 2.0
+    height: 2.5
+  - type: vehicle  # Gris oscuro - Cuadrados (vehículos)
+    position: [-25.0, -10.0]
+    radius: 2.0
+    height: 2.5
