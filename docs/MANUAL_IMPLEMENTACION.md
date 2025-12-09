@@ -10,326 +10,235 @@
 ## Tabla de Contenidos
 
 1. [Introducción](#introducción)
-2. [Especificaciones de Hardware - UAV](#especificaciones-de-hardware---uav)
-3. [Especificaciones de Hardware - UGV](#especificaciones-de-hardware---ugv)
+2. [Requisitos del Sistema de Computación](#requisitos-del-sistema-de-computación)
+3. [Requisitos de Sensores para la Arquitectura](#requisitos-de-sensores-para-la-arquitectura)
 4. [Especificaciones de Software](#especificaciones-de-software)
 5. [Sistema de Comunicación](#sistema-de-comunicación)
-6. [Instalación y Configuración](#instalación-y-configuración)
-7. [Consideraciones de Seguridad](#consideraciones-de-seguridad)
+6. [Instalación y Configuración de la Arquitectura](#instalación-y-configuración-de-la-arquitectura)
+7. [Configuración de Integración con Robots](#configuración-de-integración-con-robots)
 8. [Testing y Validación](#testing-y-validación)
-9. [Mantenimiento y Operación](#mantenimiento-y-operación)
-10. [Troubleshooting](#troubleshooting)
+9. [Troubleshooting](#troubleshooting)
+10. [Referencias](#referencias)
 
 ---
 
 ## 1. Introducción
 
-Este manual proporciona las especificaciones técnicas detalladas necesarias para implementar la arquitectura multi-agente de rescate en robots reales. El sistema está diseñado para operar en entornos de desastre, requiriendo alta confiabilidad, redundancia y robustez.
+Este manual proporciona las especificaciones técnicas necesarias para implementar la **arquitectura de software multi-agente** en robots reales. El documento se enfoca en los requisitos del sistema de computación, sensores necesarios para la arquitectura, y la configuración del stack de software, **no en las especificaciones físicas de los robots** (motores, propulsores, baterías, etc.).
 
 ### 1.1 Objetivo del Manual
 
 Este documento especifica:
-- Requisitos de hardware para UAV y UGV
-- Stack de software y dependencias
+- Requisitos de hardware de computación embebida
+- Sensores necesarios para ejecutar la arquitectura
+- Stack de software completo y dependencias
 - Configuración de sistemas de comunicación
-- Procedimientos de instalación y despliegue
-- Protocolos de seguridad y seguridad operativa
-- Métodos de validación y testing
+- Procedimientos de instalación y despliegue del software
+- Integración con robots existentes mediante ROS 2
+- Métodos de validación y testing del software
 
 ### 1.2 Alcance
 
-El manual cubre la implementación física de:
-- **UAV (Unmanned Aerial Vehicle)**: Vehículo aéreo no tripulado para reconocimiento aéreo
-- **UGV (Unmanned Ground Vehicle)**: Vehículo terrestre no tripulado para rescate terrestre
-- **Sistema de comunicación inter-agente**
-- **Infraestructura de computación embebida**
+El manual cubre la implementación de la arquitectura de software en:
+- **UAV (Unmanned Aerial Vehicle)**: Configuración del sistema de computación y sensores para reconocimiento aéreo
+- **UGV (Unmanned Ground Vehicle)**: Configuración del sistema de computación y sensores para rescate terrestre
+- **Sistema de comunicación inter-agente**: Protocolos y configuración
+- **Infraestructura de software**: Instalación y configuración completa
+
+**Nota:** Este manual asume que ya tienes un robot (UAV o UGV) funcional. Se enfoca únicamente en los componentes necesarios para ejecutar la arquitectura de software.
 
 ---
 
-## 2. Especificaciones de Hardware - UAV
+## 2. Requisitos del Sistema de Computación
 
-### 2.1 Plataforma de Vuelo
+### 2.1 Computadora Embebida Principal
 
-#### 2.1.1 Tipo de Plataforma
-- **Recomendado**: Multirotor (Quadcopter/Hexacopter)
-- **Justificación**: Capacidad de vuelo estacionario, despegue y aterrizaje vertical, maniobrabilidad para reconocimiento aéreo
+La arquitectura requiere un sistema de computación embebida capaz de ejecutar ROS 2, procesar imágenes, y ejecutar workflows de LangGraph.
 
-#### 2.1.2 Especificaciones Físicas
+#### 2.1.1 Especificaciones Mínimas
 
-| Parámetro | Especificación Mínima | Especificación Recomendada |
-|-----------|----------------------|---------------------------|
-| **Peso Máximo al Despegue (MTOW)** | 2.5 kg | 3.5 - 5.0 kg |
-| **Capacidad de Carga Útil** | 0.8 kg | 1.5 - 2.5 kg |
-| **Dimensiones (Diagonal del Frame)** | 400 mm | 550 - 650 mm |
-| **Tiempo de Vuelo** | 15 minutos | 25 - 35 minutos |
-| **Autonomía Operativa** | 500 m | 1 - 2 km (línea de vista) |
-| **Techo Operativo** | 50 m AGL | 120 m AGL |
+| Componente | Especificación Mínima |
+|-----------|----------------------|
+| **Plataforma** | Raspberry Pi 4B (4GB RAM) |
+| **CPU** | Quad-core ARM Cortex-A72 @ 1.5GHz |
+| **RAM** | 4 GB LPDDR4 |
+| **GPU** | VideoCore VI (procesamiento básico de imágenes) |
+| **Almacenamiento** | 32 GB microSD (Clase 10+) o mejor SSD |
+| **Conectividad** | Wi-Fi 802.11ac, Ethernet, USB 3.0 |
+| **Sistema Operativo** | Ubuntu 22.04 LTS (ARM64) |
 
-#### 2.1.3 Propulsores y Motores
+#### 2.1.2 Especificaciones Recomendadas
 
-| Componente | Especificación |
-|-----------|----------------|
-| **Tipo de Motor** | Brushless DC (BLDC) sin escobillas |
-| **Número de Motores** | 4 (Quadcopter) o 6 (Hexacopter) |
-| **Potencia por Motor** | 200-300 W |
-| **KV Rating** | 700-1000 KV |
-| **Propulsores** | 10"-13" diámetro, paso 4.5"-5.5" |
-| **Velocidad Máxima** | 15 m/s horizontal, 5 m/s vertical |
+| Componente | Especificación Recomendada |
+|-----------|---------------------------|
+| **Plataforma** | NVIDIA Jetson Nano/NX o Raspberry Pi 4B (8GB) |
+| **CPU** | 6-core ARM Cortex-A78AE @ 1.4GHz (Jetson) o ARM Cortex-A72 @ 1.8GHz (Pi 4B) |
+| **RAM** | 8 GB LPDDR4 |
+| **GPU** | NVIDIA GPU (128 CUDA cores) o VideoCore VI |
+| **Almacenamiento** | 64-128 GB eMMC o NVMe SSD (recomendado SSD para mejor rendimiento) |
+| **Conectividad** | Wi-Fi 802.11ac (dual-band), Ethernet Gigabit, USB 3.0 |
+| **Sistema Operativo** | Ubuntu 22.04 LTS + ROS 2 Humble |
 
-#### 2.1.4 Sistema de Batería
+#### 2.1.3 Requisitos de Energía
 
-| Parámetro | Especificación |
-|-----------|----------------|
-| **Tipo** | LiPo (Lithium Polymer) o Li-Ion |
-| **Configuración** | 4S (14.8V) o 6S (22.2V) |
-| **Capacidad** | 5000-10000 mAh |
-| **C-Rating** | Mínimo 25C (descarga continua), 50C burst |
-| **Tiempo de Carga** | 60-90 minutos (cargador balanceado) |
-| **Baterías de Repuesto** | Mínimo 3 baterías por misión |
+- **Consumo típico**: 5-15 W (Raspberry Pi) o 10-25 W (Jetson)
+- **Alimentación**: 5V/3A (Pi 4B) o 12V/2A (Jetson) con regulador de voltaje estable
+- **Fuente de alimentación**: Debe ser compatible con el sistema de energía del robot
 
-### 2.2 Sistema de Computación Embebida
+### 2.2 Interfaz con Controladores de Vuelo/Movimiento
 
-#### 2.2.1 Computadora de Vuelo Principal
+La arquitectura se integra con controladores de vuelo (UAV) o controladores de movimiento (UGV) mediante ROS 2. No se requieren especificaciones del controlador físico, solo la interfaz ROS 2.
 
-| Componente | Especificación Mínima | Especificación Recomendada |
-|-----------|----------------------|---------------------------|
-| **Plataforma** | Raspberry Pi 4B (4GB RAM) | NVIDIA Jetson Nano/NX o Raspberry Pi 4B (8GB) |
-| **CPU** | Quad-core ARM Cortex-A72 @ 1.5GHz | 6-core ARM Cortex-A78AE @ 1.4GHz (Jetson) |
-| **RAM** | 4 GB LPDDR4 | 8 GB LPDDR4 |
-| **GPU** | VideoCore VI | NVIDIA GPU (128 CUDA cores) |
-| **Almacenamiento** | 32 GB microSD (Clase 10+) | 64-128 GB eMMC o NVMe SSD |
-| **Sistema Operativo** | Ubuntu 22.04 LTS o ROS 2 Humble | Ubuntu 22.04 LTS + ROS 2 Humble |
+#### 2.2.1 UAV - Integración con Flight Controller
 
-#### 2.2.2 Controlador de Vuelo (Flight Controller)
+**Requisitos de Interfaz:**
+- Comunicación serial (UART/USB) con flight controller (Pixhawk, Pixhawk 6C, o equivalente)
+- Firmware compatible: **ArduPilot** (recomendado) o **PX4**
+- Interfaz ROS 2 mediante **MAVROS** (ArduPilot) o **PX4 ROS 2 Interface**
 
-| Parámetro | Especificación |
-|-----------|----------------|
-| **Plataforma** | Pixhawk 4, Pixhawk 6C, o equivalente |
-| **Firmware** | ArduPilot o PX4 |
-| **Procesador** | STM32F7 (168 MHz) o equivalente |
-| **IMU** | 3-axis Gyroscope + 3-axis Accelerometer + Magnetómetro |
-| **Barómetro** | Sensibilidad ±0.1 mbar |
-| **GPS/Compass** | GPS + GLONASS, precisión <2 m |
+**Configuración necesaria:**
+- Permisos de puerto serial (`/dev/ttyACM0` o `/dev/ttyUSB0`)
+- Configuración de baudrate (57600 o 115200)
+- Usuario agregado al grupo `dialout`
 
-#### 2.2.3 Módulos de Comunicación
+#### 2.2.2 UGV - Integración con Controlador de Movimiento
 
-**Wi-Fi 5G/4G LTE:**
-- Módulo Wi-Fi 802.11ac (dual-band 2.4/5 GHz)
-- Módem 4G LTE (opcional para comunicación a larga distancia)
-- Antenas omnidireccionales de alta ganancia (5-8 dBi)
+**Requisitos de Interfaz:**
+- Comunicación serial (UART/USB) o Ethernet con controlador de motores
+- Interfaz ROS 2 para publicar comandos de velocidad (`/rover/cmd_vel`)
+- Nodo ROS 2 que publique odometría (`/rover/odom`)
 
-**Radio Telemetría:**
-- Transceptor 915 MHz o 2.4 GHz (regulaciones locales)
-- Alcance: 1-2 km (línea de vista)
-- Tasa de datos: 57.6 kbps - 250 kbps
+**Opciones de implementación:**
+- Microcontrolador (Arduino/STM32) con nodo ROS 2 serial bridge
+- Controlador comercial con soporte ROS 2
+- Desarrollo de nodo ROS 2 personalizado
 
-### 2.3 Sensores
+---
 
-#### 2.3.1 Sistema de Cámara
+## 3. Requisitos de Sensores para la Arquitectura
+
+### 3.1 UAV - Sensores Requeridos
+
+#### 3.1.1 Sistema de Cámara
+
+**Requisitos para Análisis con GPT-4o:**
 
 | Parámetro | Especificación Mínima | Especificación Recomendada |
 |-----------|----------------------|---------------------------|
-| **Tipo** | Cámara RGB digital con estabilización |
-| **Resolución** | 1920x1080 @ 30 fps | 3840x2160 @ 30 fps o 1920x1080 @ 60 fps |
-| **Sensor** | 1/2.3" CMOS | 1" CMOS o mayor |
+| **Tipo** | Cámara RGB digital |
+| **Resolución** | 640×480 @ 10 fps | 1920×1080 @ 30 fps |
+| **Sensor** | 1/4" CMOS o mayor | 1/2.3" CMOS o mayor |
 | **Lente** | FOV 60-90° | FOV 84° ajustable |
-| **Estabilización** | Gimbal 2-3 ejes | Gimbal 3 ejes con control PID |
 | **Orientación** | Nadir (hacia abajo) | Nadir con capacidad de inclinación ±30° |
-| **Formato de Salida** | H.264/H.265 | H.264/H.265 hardware-accelerated |
-| **Interfaz** | USB 3.0 o MIPI CSI-2 | USB 3.0, MIPI CSI-2, o Ethernet |
+| **Formato de Salida** | JPEG/MJPEG o RAW | H.264 hardware-accelerated |
+| **Interfaz** | USB 2.0 o MIPI CSI-2 | USB 3.0, MIPI CSI-2, o Ethernet |
 
-**Ejemplos de Cámaras Recomendadas:**
-- Raspberry Pi Camera Module 3 (resolución media, bajo costo)
-- FLIR Blackfly S USB3 (alta resolución, industrial)
-- Intel RealSense D435i (RGB + profundidad)
+**Ejemplos de Cámaras Compatibles:**
+- **Raspberry Pi Camera Module 3** (resolución media, bajo costo, MIPI CSI-2)
+- **FLIR Blackfly S USB3** (alta resolución, industrial, USB 3.0)
+- **Intel RealSense D435i** (RGB + profundidad, USB 3.0)
+- **Logitech C920/C930e** (USB 2.0, buena calidad)
 
-#### 2.3.2 GPS/GNSS
+**Nota:** La arquitectura procesa imágenes a 256×256 píxeles internamente, pero una resolución mayor mejora la detección de objetos pequeños.
+
+#### 3.1.2 GPS/GNSS
+
+**Requisitos:**
 
 | Parámetro | Especificación |
 |-----------|----------------|
 | **Tipo** | GPS + GLONASS + Galileo (multi-constelación) |
-| **Precisión Horizontal** | < 2 m (GPS standalone), < 1 m (RTK opcional) |
-| **Precisión Vertical** | < 5 m |
-| **Tasa de Actualización** | 10 Hz |
-| **Tiempo de Adquisición** | < 30 segundos (frío), < 5 segundos (caliente) |
-| **Compás Magnético** | 3-axis, precisión ±2° |
+| **Precisión Horizontal** | < 5 m (GPS standalone), < 1 m (RTK opcional) |
+| **Tasa de Actualización** | 1-10 Hz |
+| **Tiempo de Adquisición** | < 60 segundos (frío), < 10 segundos (caliente) |
+| **Interfaz** | UART (NMEA 0183) o USB |
 
-#### 2.3.3 Sensor de Altitud/Barómetro
+**Integración:**
+- Puede estar integrado en el flight controller (acceso vía MAVROS)
+- O módulo GPS independiente conectado directamente a la computadora
 
-| Parámetro | Especificación |
-|-----------|----------------|
-| **Tipo** | Barómetro MEMS |
-| **Rango** | 300-1100 mbar |
-| **Precisión** | ±0.1 mbar |
-| **Tasa de Muestreo** | 100 Hz |
+**Topic ROS 2:** `/drone/gps/fix` (tipo `sensor_msgs/NavSatFix`)
 
-#### 2.3.4 Sensor Inercial (IMU)
+#### 3.1.3 Sensor Inercial (IMU)
+
+**Requisitos:**
 
 | Parámetro | Especificación |
 |-----------|----------------|
 | **Tipo** | 9-DOF (Giroscopio 3-axis + Acelerómetro 3-axis + Magnetómetro 3-axis) |
-| **Giroscopio** | Rango ±2000°/s, precisión ±0.1°/s |
-| **Acelerómetro** | Rango ±16g, precisión ±0.01g |
-| **Tasa de Muestreo** | 400-1000 Hz |
-| **Filtro de Fusión** | Sensor fusion (complementary/Kalman filter) |
+| **Tasa de Muestreo** | 50-100 Hz (suficiente para arquitectura) |
+| **Interfaz** | I2C, SPI, o UART |
 
-### 2.4 Sistemas de Seguridad
+**Integración:**
+- Generalmente integrado en el flight controller (acceso vía MAVROS)
+- O IMU independiente conectado a la computadora
 
-#### 2.4.1 Failsafe y Recuperación
-- **Return-to-Home (RTH)**: Activación automática en pérdida de señal
-- **Geofencing**: Límites de área operativa programables
-- **Batería Baja**: Aterrizaje automático cuando batería < 20%
-- **Paracaídas de Recuperación**: Opcional para operaciones sobre áreas pobladas
+**Topics ROS 2:**
+- `/drone/imu` (tipo `sensor_msgs/Imu`)
+- Odometría derivada: `/drone/odom` (tipo `nav_msgs/Odometry`)
 
-#### 2.4.2 Indicadores Visuales y Sonoros
-- LEDs de estado (posición, batería, GPS lock)
-- Buzzer para localización acústica
-- Beacon de localización (opcional)
+### 3.2 UGV - Sensores Requeridos
 
----
+#### 3.2.1 Sistema de Cámara
 
-## 3. Especificaciones de Hardware - UGV
-
-### 3.1 Plataforma Terrestre
-
-#### 3.1.1 Tipo de Plataforma
-
-**Recomendado**: Robot terrestre con tracción diferencial o orugas  
-**Justificación**: Capacidad off-road, estabilidad, capacidad de carga
-
-#### 3.1.2 Especificaciones Físicas
+**Requisitos similares al UAV:**
 
 | Parámetro | Especificación Mínima | Especificación Recomendada |
 |-----------|----------------------|---------------------------|
-| **Peso Total** | 15 kg | 25-40 kg |
-| **Capacidad de Carga Útil** | 5 kg | 10-15 kg |
-| **Dimensiones (L×W×H)** | 60×50×30 cm | 80×60×40 cm |
-| **Velocidad Máxima** | 1.0 m/s | 1.5-2.0 m/s |
-| **Velocidad de Crucero** | 0.5 m/s | 1.0 m/s |
-| **Gradiente Máximo** | 15° | 30° |
-| **Autonomía Operativa** | 2 horas | 4-6 horas |
-| **Rango Operativo** | 500 m | 1-2 km (línea de vista) |
-
-#### 3.1.3 Sistema de Propulsión
-
-| Componente | Especificación |
-|-----------|----------------|
-| **Tipo de Tracción** | Diferencial (2 ruedas motrices) o orugas |
-| **Motores** | 2× BLDC de 200-500 W cada uno |
-| **Reductor** | Gearbox con relación 10:1 a 20:1 |
-| **Controlador de Motor** | ESC (Electronic Speed Controller) dual, 30-50 A |
-| **Encoders** | Encoders incrementales en ruedas (1000 PPR) |
-| **Suspensión** | Sistema de suspensión independiente o orugas articuladas |
-
-#### 3.1.4 Sistema de Batería
-
-| Parámetro | Especificación |
-|-----------|----------------|
-| **Tipo** | LiPo o LiFePO4 (mayor seguridad) |
-| **Configuración** | 4S (14.8V) o 6S (22.2V) |
-| **Capacidad** | 20,000-30,000 mAh |
-| **C-Rating** | Mínimo 20C (descarga continua) |
-| **Tiempo de Carga** | 2-3 horas (cargador balanceado) |
-| **Baterías de Repuesto** | Mínimo 2 baterías por misión |
-
-### 3.2 Sistema de Computación Embebida
-
-#### 3.2.1 Computadora Principal
-
-| Componente | Especificación Mínima | Especificación Recomendada |
-|-----------|----------------------|---------------------------|
-| **Plataforma** | Raspberry Pi 4B (4GB RAM) | NVIDIA Jetson Nano/NX o Raspberry Pi 4B (8GB) |
-| **CPU** | Quad-core ARM Cortex-A72 @ 1.5GHz | 6-core ARM Cortex-A78AE @ 1.4GHz (Jetson) |
-| **RAM** | 4 GB LPDDR4 | 8 GB LPDDR4 |
-| **GPU** | VideoCore VI | NVIDIA GPU (128 CUDA cores) |
-| **Almacenamiento** | 64 GB microSD (Clase 10+) o SSD | 128-256 GB eMMC o NVMe SSD |
-| **Sistema Operativo** | Ubuntu 22.04 LTS + ROS 2 Humble | Ubuntu 22.04 LTS + ROS 2 Humble |
-
-#### 3.2.2 Microcontrolador Auxiliar
-
-**Arduino o STM32:**
-- Control de bajo nivel de motores y sensores
-- Interfaz con encoders y ESCs
-- Gestión de energía y monitoreo de batería
-- Comunicación serial con computadora principal (UART/USB)
-
-### 3.3 Sensores
-
-#### 3.3.1 Sistema de Cámara
-
-| Parámetro | Especificación Mínima | Especificación Recomendada |
-|-----------|----------------------|---------------------------|
-| **Tipo** | Cámara RGB digital con estabilización |
-| **Resolución** | 1920x1080 @ 30 fps | 1920x1080 @ 60 fps |
-| **Sensor** | 1/2.3" CMOS | 1" CMOS |
+| **Tipo** | Cámara RGB digital |
+| **Resolución** | 640×480 @ 10 fps | 1920×1080 @ 30 fps |
 | **Lente** | FOV 60-90° | FOV 84-120° (gran angular) |
-| **Orientación** | Frontal con inclinación ajustable | Frontal + cámara auxiliar trasera |
-| **Estabilización** | Digital (software) | Gimbal 2 ejes o estabilización mecánica |
-| **Interfaz** | USB 3.0 o MIPI CSI-2 | USB 3.0 o Ethernet |
+| **Orientación** | Frontal | Frontal + cámara auxiliar trasera (opcional) |
+| **Interfaz** | USB 2.0 o MIPI CSI-2 | USB 3.0 o Ethernet |
 
-#### 3.3.2 Sensor de Rango (LiDAR/Ultrasonido)
+**Topic ROS 2:** `/rover/camera/image_raw` (tipo `sensor_msgs/Image`)
 
-**LiDAR 2D (Recomendado):**
+#### 3.2.2 Sensor de Rango (Obstáculos)
+
+**Requisitos para Detección de Colisiones:**
+
+**Opción 1: LiDAR 2D (Recomendado)**
+
 | Parámetro | Especificación |
 |-----------|----------------|
 | **Tipo** | LiDAR 2D rotatorio |
-| **Rango** | 8-12 m |
-| **Resolución Angular** | 0.25-0.5° |
-| **Tasa de Escaneo** | 10-20 Hz |
-| **FOV Horizontal** | 360° |
-| **Ejemplos** | RPLIDAR A1, YDLIDAR X4, Hokuyo URG-04LX |
+| **Rango** | 4-12 m |
+| **Resolución Angular** | 0.25-1.0° |
+| **Tasa de Escaneo** | 5-20 Hz |
+| **FOV Horizontal** | 360° o 270° |
+| **Interfaz** | USB o Ethernet |
 
-**Sensor Ultrasónico (Alternativa/Economía):**
+**Ejemplos:**
+- **RPLIDAR A1/A2** (360°, USB, económico)
+- **YDLIDAR X4** (360°, USB)
+- **Hokuyo URG-04LX** (270°, USB)
+
+**Opción 2: Sensores Ultrasónicos (Alternativa)**
+
 - Rango: 2-4 m
 - 4-8 sensores distribuidos alrededor del robot
-- Tasa de actualización: 20-40 Hz
+- Tasa de actualización: 10-40 Hz
+- Interfaz: GPIO, I2C, o UART
 
-#### 3.3.3 GPS/GNSS
+**Topic ROS 2:** `/rover/range` (tipo `sensor_msgs/Range`) o `/rover/scan` (tipo `sensor_msgs/LaserScan`)
+
+#### 3.2.3 GPS/GNSS
+
+**Requisitos similares al UAV** (opcional pero recomendado para navegación exterior).
+
+**Topic ROS 2:** `/rover/gps/fix` (tipo `sensor_msgs/NavSatFix`)
+
+#### 3.2.4 Sensor Inercial (IMU) y Odometría
+
+**Requisitos:**
 
 | Parámetro | Especificación |
 |-----------|----------------|
-| **Tipo** | GPS + GLONASS + Galileo (multi-constelación) |
-| **Precisión Horizontal** | < 2 m (GPS standalone), < 0.5 m (RTK opcional) |
-| **Precisión Vertical** | < 5 m |
-| **Tasa de Actualización** | 10 Hz |
-| **Compás Magnético** | 3-axis, precisión ±2° |
+| **IMU** | 9-DOF (opcional, para orientación) |
+| **Odometría** | Encoders en ruedas o odometría visual |
+| **Tasa de Muestreo** | 10-50 Hz |
 
-#### 3.3.4 Sensor Inercial (IMU)
-
-| Parámetro | Especificación |
-|-----------|----------------|
-| **Tipo** | 9-DOF (Giroscopio + Acelerómetro + Magnetómetro) |
-| **Giroscopio** | Rango ±2000°/s, precisión ±0.1°/s |
-| **Acelerómetro** | Rango ±16g, precisión ±0.01g |
-| **Tasa de Muestreo** | 100-400 Hz |
-| **Filtro de Fusión** | Sensor fusion (Kalman filter) |
-
-#### 3.3.5 Sensores Adicionales
-
-**Odometría Visual (Opcional):**
-- Cámara estéreo o monocámara con odometría visual (VO)
-- Para SLAM y navegación en interiores/GPS-denied
-
-**Sensor de Inclinación:**
-- Inclinómetro para detectar gradientes y prevenir vuelcos
-- Precisión: ±1°
-
-### 3.4 Sistemas de Seguridad
-
-#### 3.4.1 Sistema de Parada de Emergencia (E-Stop)
-- Botón físico de parada de emergencia
-- Interruptor de seguridad inalámbrico (opcional)
-- Parada automática en pérdida de comunicación
-
-#### 3.4.2 Protección Mecánica
-- Parachoques delanteros y laterales
-- Protección contra sobrecarga (fuses/circuit breakers)
-- Sistema de frenado de emergencia
-
-#### 3.4.3 Indicadores
-- LEDs de estado (batería, GPS, comunicación)
-- Pantalla LCD opcional para monitoreo local
-- Alarmas sonoras para advertencias
+**Topic ROS 2:** `/rover/odom` (tipo `nav_msgs/Odometry`)
 
 ---
 
@@ -339,80 +248,83 @@ El manual cubre la implementación física de:
 
 | Plataforma | Versión | Notas |
 |-----------|---------|-------|
-| **Ubuntu Linux** | 22.04 LTS (Jammy Jellyfish) | Recomendado para desarrollo y producción |
+| **Ubuntu Linux** | 22.04 LTS (Jammy Jellyfish) | **Recomendado** - mejor soporte para ROS 2 |
 | **ROS 2** | Humble Hawksbill | Framework principal de robótica |
+
+**Alternativas:**
+- Ubuntu 20.04 LTS con ROS 2 Foxy (compatible pero no recomendado)
+- Debian 11 con ROS 2 Humble (posible con ajustes)
 
 ### 4.2 Stack de Software Principal
 
 #### 4.2.1 Sistema Base ROS 2
 
-```yaml
-ros-humble-desktop: Full desktop installation
-ros-humble-cv-bridge: OpenCV bridge para imágenes
-ros-humble-image-transport: Transporte eficiente de imágenes
-ros-humble-geometry-msgs: Mensajes de geometría
-ros-humble-nav-msgs: Mensajes de navegación
-ros-humble-sensor-msgs: Mensajes de sensores
-ros-humble-tf2: Transformaciones de coordenadas
-ros-humble-tf2-ros: ROS 2 wrapper para TF2
+**Instalación completa:**
+```bash
+ros-humble-desktop          # Instalación completa de ROS 2
+ros-humble-cv-bridge        # Bridge OpenCV ↔ ROS Image
+ros-humble-image-transport  # Transporte eficiente de imágenes
+ros-humble-geometry-msgs    # Mensajes de geometría (Twist, Pose)
+ros-humble-nav-msgs         # Mensajes de navegación (Odometry)
+ros-humble-sensor-msgs      # Mensajes de sensores (Image, NavSatFix, Imu)
+ros-humble-tf2              # Transformaciones de coordenadas
+ros-humble-tf2-ros          # ROS 2 wrapper para TF2
+ros-humble-std-msgs         # Mensajes estándar (String)
 ```
 
-#### 4.2.2 Control de Vuelo (UAV)
+#### 4.2.2 Integración con Flight Controller (UAV)
 
-**ArduPilot o PX4:**
-- Firmware de control de vuelo autónomo
-- Integración con ROS 2 mediante MAVROS (ArduPilot) o PX4 ROS 2 Interface
-
-**MAVROS (para ArduPilot):**
+**Para ArduPilot:**
 ```bash
-ros-humble-mavros
-ros-humble-mavros-extras
+ros-humble-mavros           # Interface ROS 2 ↔ MAVLink (ArduPilot)
+ros-humble-mavros-extras    # Extras de MAVROS
 ```
 
-**PX4 ROS 2 Interface:**
+**Para PX4:**
 ```bash
-px4_ros_com: PX4 ROS 2 communication package
+px4_ros_com                 # Interface ROS 2 para PX4
+px4_msgs                    # Mensajes PX4
 ```
 
 #### 4.2.3 Procesamiento de Imágenes
 
 **OpenCV:**
 ```bash
-libopencv-dev (v4.8.0+)
-python3-opencv
+libopencv-dev (v4.8.0+)     # Librerías de desarrollo
+python3-opencv              # Bindings Python
 ```
 
-**Librerías Adicionales:**
+**Librerías ROS 2 adicionales:**
 ```bash
-cv_bridge: Conversión ROS Image ↔ OpenCV
-image_transport: Compresión y transporte de imágenes
+cv_bridge                   # Conversión ROS Image ↔ OpenCV (incluido en ros-humble-cv-bridge)
+image_transport             # Compresión y transporte de imágenes (incluido en ros-humble-image-transport)
 ```
 
 #### 4.2.4 Inteligencia Artificial y Machine Learning
 
 **LangGraph y LangChain:**
 ```bash
-langgraph>=0.6.0
-langchain-openai>=0.3.0
-langchain-core>=0.3.0
+langgraph>=0.6.0            # Framework para workflows multi-agente
+langchain-openai>=0.3.0     # Integración con OpenAI
+langchain-core>=0.3.0       # Core de LangChain
 ```
 
 **OpenAI API Client:**
 ```bash
-openai>=1.0.0
-httpx>=0.24.0
+openai>=1.0.0               # Cliente oficial de OpenAI
+httpx>=0.24.0               # Cliente HTTP asíncrono
+requests>=2.31.0            # Cliente HTTP síncrono
 ```
 
 #### 4.2.5 Utilidades Python
 
 ```bash
-numpy>=1.24.0
-python-dotenv>=1.0.0
-pydantic>=2.0.0
-pillow>=10.0.0
-orjson>=3.9.0
-anyio>=4.0.0
-requests>=2.31.0
+numpy>=1.24.0               # Cálculos numéricos
+python-dotenv>=1.0.0        # Gestión de variables de entorno
+pydantic>=2.0.0             # Validación de datos
+pillow>=10.0.0              # Procesamiento de imágenes
+orjson>=3.9.0               # JSON rápido
+anyio>=4.0.0                # Async I/O
 ```
 
 ### 4.3 Dependencias del Sistema
@@ -430,7 +342,7 @@ python3-dev
 python3-pip
 python3-venv
 
-# Multimedia
+# Multimedia (para procesamiento de video)
 libavcodec-dev
 libavformat-dev
 libavutil-dev
@@ -444,43 +356,37 @@ libtinyxml2-dev
 libserial-dev
 ```
 
-#### 4.3.2 Gestión de Entornos Virtuales
+#### 4.3.2 Herramientas de Desarrollo ROS 2
 
-**Python Virtual Environment:**
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+python3-colcon-common-extensions  # Herramientas de build
+python3-rosdep                    # Gestor de dependencias
+python3-vcstool                   # Gestión de múltiples repositorios
 ```
 
 ### 4.4 Configuración de Red
 
 #### 4.4.1 Requisitos de Conectividad
 
-**UAV:**
-- Conexión Wi-Fi 802.11ac (dual-band)
-- Opcional: Módem 4G LTE para operaciones a larga distancia
-- Radio telemetría 915 MHz/2.4 GHz
+**Para cada robot (UAV/UGV):**
+- Conexión Wi-Fi 802.11ac (dual-band) o Ethernet
+- Acceso a Internet (para API de OpenAI GPT-4o)
+- Opcional: Radio telemetría para comunicación inter-robot a larga distancia
 
-**UGV:**
-- Conexión Wi-Fi 802.11ac
-- Opcional: Módem 4G LTE
-- Radio telemetría 915 MHz/2.4 GHz
-
-**Estación Base:**
+**Estación Base (opcional, para monitoreo):**
 - Conexión Ethernet o Wi-Fi estable
-- Acceso a Internet para API de OpenAI
+- Acceso a Internet
 - Router/modem para comunicación con robots
 
 #### 4.4.2 Configuración de Red ROS 2
 
-**Configurar variables de entorno:**
+**Variables de entorno:**
 ```bash
-export ROS_DOMAIN_ID=0  # Usar mismo dominio para todos los nodos
+export ROS_DOMAIN_ID=0      # Usar mismo dominio para todos los nodos
 export ROS_DISCOVERY_SERVER=  # Opcional: servidor de descubrimiento centralizado
 ```
 
-**Configurar IP estática (recomendado):**
+**Configuración de IP estática (recomendado):**
 ```bash
 # UAV
 IP: 192.168.1.100
@@ -492,7 +398,7 @@ IP: 192.168.1.101
 Netmask: 255.255.255.0
 Gateway: 192.168.1.1
 
-# Estación Base
+# Estación Base (opcional)
 IP: 192.168.1.1
 ```
 
@@ -502,7 +408,7 @@ IP: 192.168.1.1
 
 **Archivo `.env` (en cada robot):**
 ```bash
-# OpenAI API
+# OpenAI API Key (REQUERIDO)
 OPENAI_API_KEY=sk-...
 
 # ROS 2 Configuration
@@ -517,15 +423,15 @@ ROBOT_IP=192.168.1.100
 BASE_STATION_IP=192.168.1.1
 
 # Sensor Configuration
-CAMERA_RESOLUTION_WIDTH=256
-CAMERA_RESOLUTION_HEIGHT=256
+CAMERA_RESOLUTION_WIDTH=640
+CAMERA_RESOLUTION_HEIGHT=480
 CAMERA_FPS=10
 GPS_RATE_HZ=10
 ```
 
 #### 4.5.2 Archivos de Configuración YAML
 
-**Escenario de misión (`mission_scenario.yaml`):**
+**Configuración del escenario (`scenarios/default.yaml`):**
 ```yaml
 world:
   size: [100.0, 100.0]  # metros
@@ -554,8 +460,8 @@ sensors:
     noise_std: 0.1
   
   camera:
-    width: 256
-    height: 256
+    width: 640
+    height: 480
     fov_deg: 60.0
     rate_hz: 10.0
 
@@ -580,50 +486,51 @@ radio:
 └─────────────────┘         └─────────────────┘
          │                           │
          │                           │
-    Wi-Fi/4G                   Radio/4G
+    Wi-Fi/Internet              Wi-Fi/Internet
          │                           │
          ▼                           ▼
 ┌─────────────────┐         ┌─────────────────┐
 │      UAV        │◄───────►│      UGV        │
-│                 │  Radio  │                 │
-│                 │ Telemetría                │
+│                 │  ROS 2  │                 │
+│                 │ Topics  │                 │
 └─────────────────┘         └─────────────────┘
 ```
 
 ### 5.2 Protocolos de Comunicación
 
-#### 5.2.1 ROS 2 Topics (Comunicación Inter-Agente)
+#### 5.2.1 ROS 2 Topics (Comunicación Principal)
 
 **Topics del UAV:**
 ```bash
-/drone/cmd_vel              # Comandos de velocidad (Twist)
-/drone/odom                 # Odometría
-/drone/gps/fix              # Posición GPS
-/drone/camera/image_raw     # Imagen de cámara
-/drone/camera/camera_info   # Información de cámara
-/uav/mission_brief          # Briefing de misión (String)
+/drone/cmd_vel              # Comandos de velocidad (geometry_msgs/Twist)
+/drone/odom                 # Odometría (nav_msgs/Odometry)
+/drone/gps/fix              # Posición GPS (sensor_msgs/NavSatFix)
+/drone/camera/image_raw     # Imagen de cámara (sensor_msgs/Image)
+/drone/camera/camera_info   # Información de cámara (sensor_msgs/CameraInfo)
+/uav/mission_brief          # Briefing de misión (std_msgs/String)
 ```
 
 **Topics del UGV:**
 ```bash
-/rover/cmd_vel              # Comandos de velocidad
-/rover/odom                 # Odometría
-/rover/gps/fix              # Posición GPS
-/rover/range                # Sensor de rango
-/rover/camera/image_raw     # Imagen de cámara
+/rover/cmd_vel              # Comandos de velocidad (geometry_msgs/Twist)
+/rover/odom                 # Odometría (nav_msgs/Odometry)
+/rover/gps/fix              # Posición GPS (sensor_msgs/NavSatFix)
+/rover/range                # Sensor de rango (sensor_msgs/Range) o
+/rover/scan                 # LiDAR scan (sensor_msgs/LaserScan)
+/rover/camera/image_raw     # Imagen de cámara (sensor_msgs/Image)
 ```
 
 **Topics de Comunicación Inter-Agente:**
 ```bash
-/radio/uav_tx               # Mensajes del UAV
-/radio/uav_rx               # Mensajes recibidos por UAV
-/radio/ugv_tx               # Mensajes del UGV
-/radio/ugv_rx               # Mensajes recibidos por UGV
+/radio/uav_tx               # Mensajes del UAV (std_msgs/String)
+/radio/uav_rx               # Mensajes recibidos por UAV (std_msgs/String)
+/radio/ugv_tx               # Mensajes del UGV (std_msgs/String)
+/radio/ugv_rx               # Mensajes recibidos por UGV (std_msgs/String)
 ```
 
 #### 5.2.2 Formato de Mensajes
 
-**Mensaje de Misión (JSON):**
+**Mensaje de Misión (JSON en `std_msgs/String`):**
 ```json
 {
   "timestamp": "2025-01-15 14:30:00",
@@ -636,7 +543,9 @@ radio:
 }
 ```
 
-#### 5.2.3 Radio Telemetría
+#### 5.2.3 Radio Telemetría (Opcional)
+
+Para comunicación inter-robot a larga distancia sin Internet:
 
 **Especificaciones:**
 - **Frecuencia**: 915 MHz (América) o 868 MHz (Europa) o 2.4 GHz
@@ -650,11 +559,15 @@ radio:
 - **RFD900x** (LoRa, largo alcance)
 - **XBee Pro** (Zigbee, corto alcance)
 
+**Nota:** La arquitectura puede funcionar completamente con Wi-Fi/Ethernet si los robots están en la misma red.
+
 ### 5.3 QoS y Confiabilidad
 
 **Configuración QoS ROS 2:**
 ```python
 # Comandos críticos (reliable)
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+
 qos_profile = QoSProfile(
     reliability=ReliabilityPolicy.RELIABLE,
     durability=DurabilityPolicy.TRANSIENT_LOCAL,
@@ -671,19 +584,19 @@ qos_sensor = QoSProfile(
 
 ---
 
-## 6. Instalación y Configuración
+## 6. Instalación y Configuración de la Arquitectura
 
 ### 6.1 Preparación del Sistema Operativo
 
 #### 6.1.1 Instalación de Ubuntu 22.04 LTS
 
-1. **Descargar imagen ISO** desde ubuntu.com
-2. **Crear USB booteable** (usando balenaEtcher o similar)
-3. **Instalar en disco SSD** (no microSD para producción)
+1. **Descargar imagen ISO** desde ubuntu.com (ARM64 para Raspberry Pi/Jetson)
+2. **Crear medio booteable** (USB o microSD)
+3. **Instalar en disco** (SSD recomendado para mejor rendimiento)
 4. **Configurar particiones:**
    - `/` (root): 20-30 GB
    - `/home`: Resto del espacio
-   - Swap: 4-8 GB
+   - Swap: 2-4 GB
 
 #### 6.1.2 Configuración Inicial
 
@@ -747,7 +660,11 @@ sudo apt install -y ros-humble-cv-bridge \
     ros-humble-nav-msgs \
     ros-humble-sensor-msgs \
     ros-humble-tf2 \
-    ros-humble-tf2-ros
+    ros-humble-tf2-ros \
+    ros-humble-std-msgs
+
+# Instalar MAVROS (solo para UAV con ArduPilot)
+sudo apt install -y ros-humble-mavros ros-humble-mavros-extras
 ```
 
 ### 6.3 Instalación del Proyecto
@@ -755,24 +672,23 @@ sudo apt install -y ros-humble-cv-bridge \
 #### 6.3.1 Clonar Repositorio
 
 ```bash
-# Crear workspace
+# Crear workspace ROS 2
 mkdir -p ~/robot_ws/src
 cd ~/robot_ws/src
 
 # Clonar proyecto
 git clone https://github.com/renzoBC20/Disaster-multiagent-architecture-project.git
-
-# O solo el simulador
-git clone <repository-url> robotic-ai-agents
+cd Disaster-multiagent-architecture-project
 ```
 
 #### 6.3.2 Instalar Dependencias Python
 
 ```bash
 # Crear entorno virtual
-cd ~/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent
+cd MultiAgent
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
 
 # Instalar dependencias
 pip install --upgrade pip
@@ -796,95 +712,24 @@ source install/setup.bash
 echo "source ~/robot_ws/install/setup.bash" >> ~/.bashrc
 ```
 
-### 6.4 Configuración de Hardware Específico
-
-#### 6.4.1 UAV - Configuración de Flight Controller
-
-**ArduPilot:**
-1. Conectar Pixhawk vía USB
-2. Abrir Mission Planner o QGroundControl
-3. Configurar parámetros:
-   - Frame type: Quadcopter X
-   - Motor outputs: Q_MOTOR_COUNT = 4
-   - Radio calibration
-   - Accelerometer calibration
-   - Compass calibration
-   - GPS setup
-
-**Instalar MAVROS:**
-```bash
-sudo apt install -y ros-humble-mavros ros-humble-mavros-extras
-```
-
-**Configurar conexión serial:**
-```bash
-# Agregar usuario a grupo dialout
-sudo usermod -a -G dialout $USER
-
-# Configurar udev rules para Pixhawk
-sudo bash -c 'cat > /etc/udev/rules.d/99-pixhawk.rules << EOF
-SUBSYSTEM=="tty", ATTRS{idVendor}=="26ac", ATTRS{idProduct}=="0011", MODE="0666", GROUP="dialout"
-EOF'
-sudo udevadm control --reload-rules
-```
-
-#### 6.4.2 UGV - Configuración de Controladores de Motor
-
-**Configurar comunicación serial:**
-```bash
-# Identificar puerto USB del controlador
-lsusb
-dmesg | grep tty
-
-# Configurar permisos
-sudo chmod 666 /dev/ttyUSB0  # o ttyACM0
-```
-
-**Configurar Arduino/STM32:**
-- Cargar firmware de control de motores
-- Configurar parámetros (velocidades máximas, PID, etc.)
-- Probar comunicación serial
-
-#### 6.4.3 Configuración de Cámara
-
-**Raspberry Pi Camera:**
-```bash
-# Habilitar cámara
-sudo raspi-config
-# Interface Options → Camera → Enable
-
-# Probar cámara
-raspistill -o test.jpg
-```
-
-**Cámara USB:**
-```bash
-# Verificar detección
-lsusb | grep -i camera
-v4l2-ctl --list-devices
-
-# Probar captura
-v4l2-ctl --device=/dev/video0 --stream-mmap --stream-count=1 --stream-to=test.raw
-```
-
-#### 6.4.4 Configuración de GPS
+### 6.4 Configuración de API Keys
 
 ```bash
-# Verificar puerto GPS
-sudo apt install -y gpsd gpsd-clients
-sudo systemctl stop gpsd.socket
-sudo systemctl disable gpsd.socket
+# Crear archivo de configuración
+cd ~/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent
+cp config.example .env
 
-# Configurar gpsd
-sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
+# Editar con API key
+nano .env
+# Agregar: OPENAI_API_KEY=sk-...
 
-# Probar GPS
-cgps -s
+# Asegurar permisos
+chmod 600 .env
 ```
 
 ### 6.5 Configuración de Red
 
-#### 6.5.1 Configurar Wi-Fi
+#### 6.5.1 Configurar Wi-Fi (si es necesario)
 
 ```bash
 # Editar configuración de red
@@ -911,41 +756,11 @@ network:
 sudo netplan apply
 ```
 
-#### 6.5.2 Configurar Radio Telemetría
+### 6.6 Configuración de Servicios del Sistema
 
-**3DR Radio (SiK):**
-```bash
-# Instalar herramientas
-sudo apt install -y screen
+#### 6.6.1 Crear Servicio systemd para Nodos ROS 2
 
-# Conectar vía USB
-screen /dev/ttyUSB0 57600
-
-# En modo AT, configurar:
-# AT&S1=1  # Guardar configuración
-# AT&W     # Escribir a EEPROM
-```
-
-### 6.6 Configuración de API Keys
-
-```bash
-# Crear archivo de configuración
-cd ~/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent
-cp config.example .env
-
-# Editar con API key
-nano .env
-# Agregar: OPENAI_API_KEY=sk-...
-
-# Asegurar permisos
-chmod 600 .env
-```
-
-### 6.7 Configuración de Servicios del Sistema
-
-#### 6.7.1 Crear Servicio systemd para Nodos ROS 2
-
-**Archivo: `/etc/systemd/system/uav-controller.service`**
+**Archivo: `/etc/systemd/system/uav-controller.service`** (para UAV)
 ```ini
 [Unit]
 Description=UAV LangGraph Controller
@@ -953,7 +768,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=robot
+User=robot  # Cambiar por tu usuario
 WorkingDirectory=/home/robot/robot_ws
 Environment="ROS_DOMAIN_ID=0"
 Environment="PATH=/home/robot/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent/venv/bin:/usr/bin:/bin"
@@ -965,129 +780,191 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
+**Archivo: `/etc/systemd/system/ugv-controller.service`** (para UGV)
+```ini
+[Unit]
+Description=UGV LangGraph Controller
+After=network.target
+
+[Service]
+Type=simple
+User=robot
+WorkingDirectory=/home/robot/robot_ws
+Environment="ROS_DOMAIN_ID=0"
+Environment="PATH=/home/robot/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent/venv/bin:/usr/bin:/bin"
+ExecStart=/home/robot/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent/venv/bin/python3 /home/robot/robot_ws/src/Disaster-multiagent-architecture-project/robotic-ai-agents/simulator/microsim/scripts/ugv_langgraph_controller.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
 **Habilitar servicio:**
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable uav-controller.service
+sudo systemctl enable uav-controller.service  # o ugv-controller.service
 sudo systemctl start uav-controller.service
 ```
 
 ---
 
-## 7. Consideraciones de Seguridad
+## 7. Configuración de Integración con Robots
 
-### 7.1 Seguridad Operativa
+### 7.1 UAV - Integración con Flight Controller
 
-#### 7.1.1 Checklist Pre-Vuelo (UAV)
+#### 7.1.1 Configurar MAVROS (ArduPilot)
 
-- [ ] Verificar nivel de batería (>80%)
-- [ ] Inspección visual del frame y propulsores
-- [ ] Calibración de IMU y compás
-- [ ] Verificar GPS lock (>6 satélites)
-- [ ] Prueba de motores (sin propulsores)
-- [ ] Verificar comunicación con estación base
-- [ ] Configurar geofencing
-- [ ] Verificar failsafe (RTH)
-- [ ] Revisar condiciones climáticas
-- [ ] Verificar área de operación (sin obstáculos, sin personas)
-
-#### 7.1.2 Checklist Pre-Operación (UGV)
-
-- [ ] Verificar nivel de batería (>80%)
-- [ ] Inspección visual del chasis y ruedas/orugas
-- [ ] Calibración de sensores (IMU, GPS)
-- [ ] Prueba de motores y dirección
-- [ ] Verificar comunicación con estación base
-- [ ] Prueba de sensor de rango/LiDAR
-- [ ] Verificar E-Stop funcional
-- [ ] Revisar área de operación
-
-### 7.2 Seguridad de Software
-
-#### 7.2.1 Protección de Credenciales
-
+**Configurar conexión serial:**
 ```bash
-# Usar variables de entorno (no hardcodear)
-export OPENAI_API_KEY=sk-...
+# Agregar usuario a grupo dialout
+sudo usermod -a -G dialout $USER
 
-# Usar archivos de configuración con permisos restringidos
-chmod 600 .env
+# Configurar udev rules para Pixhawk (ajustar según tu hardware)
+sudo bash -c 'cat > /etc/udev/rules.d/99-pixhawk.rules << EOF
+SUBSYSTEM=="tty", ATTRS{idVendor}=="26ac", ATTRS{idProduct}=="0011", MODE="0666", GROUP="dialout"
+EOF'
+sudo udevadm control --reload-rules
 
-# No commitear archivos con credenciales
-# Agregar a .gitignore:
-.env
-*.key
-config
+# Reiniciar sesión para aplicar cambios de grupo
 ```
 
-#### 7.2.2 Actualizaciones de Seguridad
-
+**Ejecutar MAVROS:**
 ```bash
-# Actualizaciones automáticas de seguridad
-sudo apt install -y unattended-upgrades
-sudo dpkg-reconfigure -plow unattended-upgrades
+# Identificar puerto serial
+ls /dev/ttyACM* /dev/ttyUSB*
 
-# Configurar firewall
-sudo ufw enable
-sudo ufw allow 22/tcp  # SSH
-sudo ufw allow from 192.168.1.0/24  # Red local
+# Ejecutar MAVROS
+ros2 run mavros mavros_node --ros-args \
+    -p fcu_url:=/dev/ttyACM0:57600 \
+    -p system_id:=1 \
+    -p component_id:=191
 ```
 
-### 7.3 Seguridad de Comunicación
+**Verificar conexión:**
+```bash
+# Ver estado del flight controller
+ros2 topic echo /mavros/state
 
-#### 7.3.1 Encriptación de Comunicación
+# Ver odometría
+ros2 topic echo /mavros/global_position/local
 
-- Usar **VPN** para comunicación Wi-Fi/Internet
-- **WPA3** para redes Wi-Fi
-- **HTTPS/TLS** para comunicación con APIs externas
+# Ver GPS
+ros2 topic echo /mavros/global_position/global
+```
 
-#### 7.3.2 Autenticación
+#### 7.1.2 Configurar Bridge de Topics
 
-- Usar claves SSH en lugar de contraseñas
-- Implementar autenticación mutua entre robots
-- Rotar credenciales regularmente
+La arquitectura espera los siguientes topics. Si tu flight controller usa nombres diferentes, crea un nodo bridge:
 
-### 7.4 Seguridad Física
+**Topics requeridos:**
+- `/drone/cmd_vel` (geometry_msgs/Twist)
+- `/drone/odom` (nav_msgs/Odometry)
+- `/drone/gps/fix` (sensor_msgs/NavSatFix)
+- `/drone/camera/image_raw` (sensor_msgs/Image)
 
-- Almacenar robots en área segura
-- Proteger contra acceso no autorizado
-- Mantener registro de uso y mantenimiento
-- Etiquetar baterías y seguir protocolos de seguridad LiPo
+**Ejemplo de bridge (crear nodo ROS 2 personalizado):**
+```python
+# mavros_bridge.py
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+from sensor_msgs.msg import NavSatFix
+
+class MAVROSBridge(Node):
+    def __init__(self):
+        super().__init__('mavros_bridge')
+        # Subscribirse a topics de MAVROS
+        self.sub_cmd = self.create_subscription(
+            Twist, '/mavros/setpoint_velocity/cmd_vel_unstamped',
+            self.cmd_callback, 10)
+        # ... más subscriptions
+
+        # Publicar a topics esperados por la arquitectura
+        self.pub_cmd = self.create_publisher(Twist, '/drone/cmd_vel', 10)
+        # ... más publishers
+```
+
+### 7.2 UGV - Integración con Controlador de Movimiento
+
+#### 7.2.1 Configurar Comunicación Serial
+
+**Identificar puerto:**
+```bash
+lsusb
+dmesg | grep tty
+
+# Configurar permisos
+sudo chmod 666 /dev/ttyUSB0  # o ttyACM0
+```
+
+**Crear nodo ROS 2 serial bridge:**
+- Ejemplo usando `pyserial` y ROS 2
+- Leer comandos desde `/rover/cmd_vel`
+- Publicar odometría en `/rover/odom`
+- Publicar datos de sensores en topics correspondientes
+
+#### 7.2.2 Configurar Sensores
+
+**Cámara:**
+```bash
+# Verificar detección
+lsusb | grep -i camera
+v4l2-ctl --list-devices
+
+# Probar captura
+v4l2-ctl --device=/dev/video0 --stream-mmap --stream-count=1 --stream-to=test.raw
+```
+
+**LiDAR:**
+```bash
+# Verificar detección
+lsusb | grep -i lidar
+
+# Probar con driver del fabricante (ej: rplidar_ros)
+ros2 launch rplidar_ros rplidar.launch.py
+```
+
+**GPS:**
+```bash
+# Verificar puerto GPS
+sudo apt install -y gpsd gpsd-clients
+sudo systemctl stop gpsd.socket
+sudo systemctl disable gpsd.socket
+
+# Configurar gpsd
+sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
+
+# Probar GPS
+cgps -s
+```
+
+### 7.3 Configuración de Transformaciones (TF)
+
+La arquitectura requiere un árbol de transformaciones publicado:
+
+```bash
+# Verificar TF tree
+ros2 run tf2_tools view_frames
+
+# Topics requeridos:
+# /tf (tf2_msgs/TFMessage)
+# /tf_static (tf2_msgs/TFMessage)
+```
+
+**Frames requeridos:**
+- `map` → `odom` → `drone/base_link` o `rover/base_link`
+- `drone/base_link` → `drone/camera_link` (UAV)
+- `rover/base_link` → `rover/camera_link` (UGV)
 
 ---
 
 ## 8. Testing y Validación
 
-### 8.1 Testing de Hardware
+### 8.1 Testing de Software
 
-#### 8.1.1 UAV - Pruebas en Tierra
-
-```bash
-# Prueba de sensores
-ros2 run microsim test_sensors
-
-# Prueba de comunicación
-ros2 topic echo /drone/gps/fix
-ros2 topic echo /drone/camera/image_raw
-
-# Prueba de control
-ros2 topic pub /drone/cmd_vel geometry_msgs/Twist "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {z: 0.0}}"
-```
-
-#### 8.1.2 UGV - Pruebas en Tierra
-
-```bash
-# Prueba de motores (sin carga)
-ros2 topic pub /rover/cmd_vel geometry_msgs/Twist "{linear: {x: 0.1, y: 0.0, z: 0.0}, angular: {z: 0.0}}"
-
-# Prueba de sensores
-ros2 topic echo /rover/range
-ros2 topic echo /rover/gps/fix
-```
-
-### 8.2 Testing de Software
-
-#### 8.2.1 Pruebas Unitarias
+#### 8.1.1 Pruebas Unitarias
 
 ```bash
 cd ~/robot_ws
@@ -1095,186 +972,118 @@ colcon test --packages-select microsim
 colcon test-result --verbose
 ```
 
-#### 8.2.2 Pruebas de Integración
+#### 8.1.2 Pruebas de Integración con Simulador
 
 ```bash
-# Iniciar simulador (para pruebas)
+# Terminal 1: Iniciar simulador
+source ~/robot_ws/install/setup.bash
 ros2 run microsim microsim_node
 
-# En otra terminal, ejecutar controlador
-ros2 run microsim uav_langgraph_controller
+# Terminal 2: Ejecutar controlador UAV
+source ~/robot_ws/install/setup.bash
+cd ~/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent
+source venv/bin/activate
+python3 ../robotic-ai-agents/simulator/microsim/scripts/uav_langgraph_controller.py
+```
+
+### 8.2 Testing con Hardware Real
+
+#### 8.2.1 Verificar Sensores
+
+```bash
+# Ver topics disponibles
+ros2 topic list
+
+# Ver datos de GPS
+ros2 topic echo /drone/gps/fix
+
+# Ver imágenes de cámara
+ros2 topic echo /drone/camera/image_raw --no-arr
+
+# Ver odometría
+ros2 topic echo /drone/odom
+```
+
+#### 8.2.2 Verificar Comunicación
+
+```bash
+# Ver nodos activos
+ros2 node list
+
+# Ver información de un nodo
+ros2 node info /uav_langgraph_controller
+
+# Verificar comunicación inter-robot
+ros2 topic echo /radio/uav_tx
 ```
 
 ### 8.3 Pruebas de Campo
 
 #### 8.3.1 Fase 1: Pruebas Básicas
 
-1. **Despegue y Aterrizaje Manual** (UAV)
-2. **Movimiento Básico** (UGV)
-3. **Comunicación Inter-Agente**
-4. **Captura de Imágenes**
+1. **Verificar publicación de topics** (GPS, cámara, odometría)
+2. **Probar comando de movimiento** (publicar en `/drone/cmd_vel` o `/rover/cmd_vel`)
+3. **Verificar captura de imágenes**
+4. **Probar comunicación inter-agente**
 
 #### 8.3.2 Fase 2: Pruebas Autónomas
 
-1. **Navegación Autónoma** (waypoints)
-2. **Detección de Obstáculos**
-3. **Comunicación de Misión**
-4. **Ejecución de Ruta**
+1. **Ejecutar workflow completo de reconocimiento** (UAV)
+2. **Probar detección de víctimas/obstáculos**
+3. **Verificar generación de briefing de misión**
+4. **Probar recepción y ejecución de misión** (UGV)
 
 #### 8.3.3 Fase 3: Pruebas de Misión Completa
 
-1. **Reconocimiento Aéreo Completo**
-2. **Identificación de Víctimas/Obstáculos**
-3. **Planificación de Ruta**
-4. **Ejecución de Rescate**
+1. **Reconocimiento aéreo completo**
+2. **Identificación de víctimas/obstáculos con GPT-4o**
+3. **Planificación de ruta optimizada**
+4. **Ejecución de rescate terrestre**
 
 ### 8.4 Métricas de Validación
 
 | Métrica | Objetivo | Método de Medición |
 |---------|----------|-------------------|
-| **Precisión de GPS** | < 2 m | Comparar con referencia RTK |
+| **Tasa de Publicación de Topics** | Según configuración (10 Hz GPS, 10 Hz cámara) | `ros2 topic hz /topic_name` |
+| **Latencia de Comandos** | < 100 ms | Timestamps de comandos vs ejecución |
 | **Tasa de Detección de Víctimas** | > 90% | Comparar con ground truth |
 | **Tasa de Falsos Positivos** | < 5% | Análisis manual |
-| **Tiempo de Comunicación** | < 500 ms | Timestamps de mensajes |
-| **Confiabilidad del Sistema** | > 95% uptime | Logs del sistema |
+| **Tiempo de Comunicación Inter-Agente** | < 500 ms | Timestamps de mensajes |
+| **Uptime del Sistema** | > 95% | Logs del sistema |
 
 ---
 
-## 9. Mantenimiento y Operación
+## 9. Troubleshooting
 
-### 9.1 Mantenimiento Preventivo
+### 9.1 Problemas de Instalación
 
-#### 9.1.1 UAV - Checklist Semanal
-
-- [ ] Inspección visual del frame
-- [ ] Limpieza de motores y propulsores
-- [ ] Verificación de conexiones eléctricas
-- [ ] Calibración de sensores
-- [ ] Actualización de software
-- [ ] Prueba de baterías
-
-#### 9.1.2 UGV - Checklist Semanal
-
-- [ ] Inspección visual del chasis
-- [ ] Limpieza de ruedas/orugas
-- [ ] Verificación de suspensión
-- [ ] Calibración de sensores
-- [ ] Verificación de E-Stop
-- [ ] Prueba de baterías
-
-### 9.2 Logs y Monitoreo
-
-#### 9.2.1 Configuración de Logging
-
-```bash
-# Configurar ROS 2 logging
-export RCUTILS_LOGGING_SEVERITY=INFO
-export RCUTILS_COLORIZED_OUTPUT=1
-
-# Redirigir logs a archivo
-ros2 run microsim uav_langgraph_controller 2>&1 | tee ~/logs/uav_$(date +%Y%m%d_%H%M%S).log
-```
-
-#### 9.2.2 Monitoreo del Sistema
-
-```bash
-# Monitoreo de recursos
-htop
-
-# Monitoreo de temperatura (Jetson)
-tegrastats
-
-# Monitoreo de red
-iftop
-```
-
-### 9.3 Actualizaciones
-
-#### 9.3.1 Actualización de Software
-
-```bash
-# Actualizar sistema
-sudo apt update && sudo apt upgrade -y
-
-# Actualizar código del proyecto
-cd ~/robot_ws/src/Disaster-multiagent-architecture-project
-git pull origin main
-
-# Recompilar
-cd ~/robot_ws
-colcon build --packages-select microsim
-```
-
----
-
-## 10. Troubleshooting
-
-### 10.1 Problemas Comunes - UAV
-
-#### Problema: No despega / Motores no responden
+#### Problema: ROS 2 no se encuentra
 
 **Diagnóstico:**
 ```bash
-# Verificar comunicación con flight controller
-ros2 topic echo /mavros/state
-
-# Verificar comandos
-ros2 topic echo /drone/cmd_vel
+echo $ROS_DISTRO
+source /opt/ros/humble/setup.bash
 ```
 
-**Soluciones:**
-- Verificar calibración de radio control
-- Revisar conexiones de ESCs a flight controller
-- Verificar calibración de IMU
-- Revisar modo de vuelo (debe estar en GUIDED/STABILIZE)
+**Solución:**
+- Verificar instalación de ROS 2
+- Agregar `source /opt/ros/humble/setup.bash` a `~/.bashrc`
 
-#### Problema: Pérdida de GPS
+#### Problema: Dependencias Python faltantes
 
 **Diagnóstico:**
 ```bash
-ros2 topic echo /drone/gps/fix
+cd ~/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent
+source venv/bin/activate
+pip list
 ```
 
-**Soluciones:**
-- Mover a área abierta (sin obstáculos)
-- Esperar > 30 segundos para adquisición
-- Verificar conexión de antena GPS
-- Revisar configuración de GPS en flight controller
-
-### 10.2 Problemas Comunes - UGV
-
-#### Problema: Motores no responden
-
-**Diagnóstico:**
+**Solución:**
 ```bash
-# Verificar comunicación serial
-dmesg | grep tty
-
-# Verificar comandos
-ros2 topic echo /rover/cmd_vel
+pip install -r requirements.txt
 ```
 
-**Soluciones:**
-- Verificar conexiones de ESCs
-- Revisar comunicación serial con controlador
-- Verificar alimentación de motores
-- Revisar configuración de permisos de puerto serial
-
-#### Problema: Sensor de rango no funciona
-
-**Diagnóstico:**
-```bash
-ros2 topic echo /rover/range
-ros2 topic list | grep range
-```
-
-**Soluciones:**
-- Verificar conexión de LiDAR/US
-- Revisar alimentación del sensor
-- Verificar configuración de puerto USB/serial
-- Revisar drivers del sensor
-
-### 10.3 Problemas de Comunicación
+### 9.2 Problemas de Comunicación
 
 #### Problema: Robots no se comunican
 
@@ -1288,18 +1097,62 @@ ros2 node list
 ```
 
 **Soluciones:**
-- Verificar mismo ROS_DOMAIN_ID
+- Verificar mismo `ROS_DOMAIN_ID`
 - Revisar configuración de red (IPs, máscara)
-- Verificar firewall
-- Revisar conexión Wi-Fi/radio
+- Verificar firewall: `sudo ufw status`
+- Revisar conexión Wi-Fi/Ethernet
 
-### 10.4 Problemas de Software
+#### Problema: Topics no aparecen
+
+**Diagnóstico:**
+```bash
+ros2 topic list
+ros2 topic echo /drone/odom
+```
+
+**Soluciones:**
+- Verificar que los nodos estén ejecutándose
+- Verificar nombres de topics (case-sensitive)
+- Revisar logs: `ros2 node info /node_name`
+
+### 9.3 Problemas de Sensores
+
+#### Problema: Cámara no funciona
+
+**Diagnóstico:**
+```bash
+lsusb | grep -i camera
+v4l2-ctl --list-devices
+ros2 topic echo /drone/camera/image_raw
+```
+
+**Soluciones:**
+- Verificar conexión USB/cable
+- Instalar drivers del fabricante
+- Verificar permisos: `sudo usermod -a -G video $USER`
+- Verificar configuración del nodo de cámara
+
+#### Problema: GPS no publica datos
+
+**Diagnóstico:**
+```bash
+ros2 topic echo /drone/gps/fix
+cgps -s  # Si está disponible
+```
+
+**Soluciones:**
+- Verificar conexión del módulo GPS
+- Mover a área abierta (mejor recepción)
+- Esperar > 60 segundos para adquisición inicial
+- Verificar configuración de baudrate
+
+### 9.4 Problemas de Software
 
 #### Problema: Nodos no inician
 
 **Diagnóstico:**
 ```bash
-# Verificar errores
+# Ver errores del servicio
 journalctl -u uav-controller.service -n 50
 
 # Verificar dependencias
@@ -1310,38 +1163,52 @@ rosdep check --from-paths src --ignore-src
 - Verificar instalación de dependencias
 - Revisar configuración de servicios systemd
 - Verificar permisos de archivos
-- Revisar logs de errores
+- Revisar logs de errores: `ros2 run <package> <node> --ros-args --log-level debug`
+
+#### Problema: Error de API de OpenAI
+
+**Diagnóstico:**
+```bash
+# Verificar API key
+cat ~/robot_ws/src/Disaster-multiagent-architecture-project/MultiAgent/.env
+```
+
+**Soluciones:**
+- Verificar que la API key esté configurada correctamente
+- Verificar conectividad a Internet
+- Verificar cuota/balance de cuenta de OpenAI
+- Revisar logs de errores del nodo
 
 ---
 
-## Apéndices
+## 10. Referencias
 
-### A. Glosario de Términos
-
-- **AGL**: Above Ground Level (altura sobre el nivel del suelo)
-- **BLDC**: Brushless DC Motor
-- **ESC**: Electronic Speed Controller
-- **FOV**: Field of View (campo de visión)
-- **GNSS**: Global Navigation Satellite System
-- **IMU**: Inertial Measurement Unit
-- **LiPo**: Lithium Polymer (batería)
-- **MTOW**: Maximum Take-Off Weight
-- **RTK**: Real-Time Kinematic (GPS de alta precisión)
-- **SLAM**: Simultaneous Localization and Mapping
-
-### B. Referencias y Recursos
+### 10.1 Documentación Oficial
 
 - **ROS 2 Documentation**: https://docs.ros.org/en/humble/
 - **ArduPilot Documentation**: https://ardupilot.org/
 - **PX4 Documentation**: https://docs.px4.io/
 - **OpenCV Documentation**: https://docs.opencv.org/
 - **LangGraph Documentation**: https://python.langchain.com/docs/langgraph
+- **OpenAI API Documentation**: https://platform.openai.com/docs
 
-### C. Contacto y Soporte
+### 10.2 Recursos Adicionales
 
-- **Repositorio**: https://github.com/renzoBC20/Disaster-multiagent-architecture-project
-- **Issues**: https://github.com/renzoBC20/Disaster-multiagent-architecture-project/issues
-- **Autor**: Renzo BC20
+- **Repositorio del Proyecto**: https://github.com/renzoBC20/Disaster-multiagent-architecture-project
+- **Issues y Soporte**: https://github.com/renzoBC20/Disaster-multiagent-architecture-project/issues
+- **ROS 2 Tutorials**: https://docs.ros.org/en/humble/Tutorials.html
+- **MAVROS Documentation**: http://wiki.ros.org/mavros
+
+### 10.3 Glosario de Términos
+
+- **AGL**: Above Ground Level (altura sobre el nivel del suelo)
+- **FOV**: Field of View (campo de visión)
+- **GNSS**: Global Navigation Satellite System
+- **IMU**: Inertial Measurement Unit
+- **MAVLink**: Protocolo de comunicación para vehículos aéreos autónomos
+- **RTK**: Real-Time Kinematic (GPS de alta precisión)
+- **SLAM**: Simultaneous Localization and Mapping
+- **TF**: Transform Frame (sistema de transformaciones de coordenadas en ROS)
 
 ---
 
@@ -1349,3 +1216,7 @@ rosdep check --from-paths src --ignore-src
 **Última Actualización:** 2025  
 **Estado:** Documento de Referencia
 
+---
+
+**Autor:** Renzo BC20  
+**Contacto:** https://github.com/renzoBC20
