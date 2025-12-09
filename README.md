@@ -194,6 +194,7 @@ Este proyecto implementa una arquitectura multi-agente completa que combina:
 
 ## 📝 Documentación
 
+- [📘 Manual de Implementación para Robots Reales](docs/MANUAL_IMPLEMENTACION.md) - **Especificaciones de hardware y software para implementación en robots físicos**
 - [Documentación MultiAgent](MultiAgent/docs/README.md)
 - [Documentación MicroSim](robotic-ai-agents/simulator/microsim/docs/)
 - [Guía de Instalación](robotic-ai-agents/simulator/microsim/INSTRUCCIONES_INSTALACION.md)
