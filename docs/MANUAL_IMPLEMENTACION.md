@@ -161,66 +161,24 @@ La arquitectura se integra con controladores de vuelo (UAV) o controladores de m
 
 ### 3.2 UGV - Sensores Requeridos
 
-#### 3.2.1 Sistema de Cámara
-
-**Requisitos similares al UAV:**
-
-| Parámetro | Especificación Mínima | Especificación Recomendada |
-|-----------|----------------------|---------------------------|
-| **Tipo** | Cámara RGB digital |
-| **Resolución** | 640×480 @ 10 fps | 1920×1080 @ 30 fps |
-| **Lente** | FOV 60-90° | FOV 84-120° (gran angular) |
-| **Orientación** | Frontal | Frontal + cámara auxiliar trasera (opcional) |
-| **Interfaz** | USB 2.0 o MIPI CSI-2 | USB 3.0 o Ethernet |
-
-**Topic ROS 2:** `/rover/camera/image_raw` (tipo `sensor_msgs/Image`)
-
-#### 3.2.2 Sensor de Rango (Obstáculos)
-
-**Requisitos para Detección de Colisiones:**
-
-**Opción 1: LiDAR 2D (Recomendado)**
-
-| Parámetro | Especificación |
-|-----------|----------------|
-| **Tipo** | LiDAR 2D rotatorio |
-| **Rango** | 4-12 m |
-| **Resolución Angular** | 0.25-1.0° |
-| **Tasa de Escaneo** | 5-20 Hz |
-| **FOV Horizontal** | 360° o 270° |
-| **Interfaz** | USB o Ethernet |
-
-**Ejemplos:**
-- **RPLIDAR A1/A2** (360°, USB, económico)
-- **YDLIDAR X4** (360°, USB)
-- **Hokuyo URG-04LX** (270°, USB)
-
-**Opción 2: Sensores Ultrasónicos (Alternativa)**
-
-- Rango: 2-4 m
-- 4-8 sensores distribuidos alrededor del robot
-- Tasa de actualización: 10-40 Hz
-- Interfaz: GPIO, I2C, o UART
-
-**Topic ROS 2:** `/rover/range` (tipo `sensor_msgs/Range`) o `/rover/scan` (tipo `sensor_msgs/LaserScan`)
-
-#### 3.2.3 GPS/GNSS
-
-**Requisitos similares al UAV** (opcional pero recomendado para navegación exterior).
-
-**Topic ROS 2:** `/rover/gps/fix` (tipo `sensor_msgs/NavSatFix`)
-
-#### 3.2.4 Sensor Inercial (IMU) y Odometría
+#### 3.2.1 Odometría
 
 **Requisitos:**
 
 | Parámetro | Especificación |
 |-----------|----------------|
-| **IMU** | 9-DOF (opcional, para orientación) |
-| **Odometría** | Encoders en ruedas o odometría visual |
+| **Tipo** | Odometría basada en encoders de ruedas o odometría visual |
 | **Tasa de Muestreo** | 10-50 Hz |
+| **Precisión** | Suficiente para navegación relativa |
+
+**Integración:**
+- Encoders en ruedas conectados al controlador de movimiento
+- O sistema de odometría visual (VO)
+- Debe publicar pose completa (posición x, y y orientación θ)
 
 **Topic ROS 2:** `/rover/odom` (tipo `nav_msgs/Odometry`)
+
+**Nota:** El UGV en la arquitectura actual solo requiere odometría para navegación. No se requieren cámaras, GPS, IMU o sensores de rango adicionales para el funcionamiento básico de la arquitectura.
 
 ---
 
