@@ -141,41 +141,23 @@ La arquitectura se integra con controladores de vuelo (UAV) o controladores de m
 
 **Nota:** La arquitectura procesa imágenes a 256×256 píxeles internamente, pero una resolución mayor mejora la detección de objetos pequeños.
 
-#### 3.1.2 GPS/GNSS
+#### 3.1.2 Odometría
 
 **Requisitos:**
 
 | Parámetro | Especificación |
 |-----------|----------------|
-| **Tipo** | GPS + GLONASS + Galileo (multi-constelación) |
-| **Precisión Horizontal** | < 5 m (GPS standalone), < 1 m (RTK opcional) |
-| **Tasa de Actualización** | 1-10 Hz |
-| **Tiempo de Adquisición** | < 60 segundos (frío), < 10 segundos (caliente) |
-| **Interfaz** | UART (NMEA 0183) o USB |
+| **Tipo** | Odometría derivada del flight controller o sistema de navegación |
+| **Tasa de Muestreo** | 10-50 Hz |
+| **Formato** | Pose completa (posición x, y, z y orientación) |
 
 **Integración:**
-- Puede estar integrado en el flight controller (acceso vía MAVROS)
-- O módulo GPS independiente conectado directamente a la computadora
+- Generalmente proporcionada por el flight controller (ArduPilot/PX4) a través de MAVROS
+- Incluye posición y orientación del UAV
 
-**Topic ROS 2:** `/drone/gps/fix` (tipo `sensor_msgs/NavSatFix`)
+**Topic ROS 2:** `/drone/odom` (tipo `nav_msgs/Odometry`)
 
-#### 3.1.3 Sensor Inercial (IMU)
-
-**Requisitos:**
-
-| Parámetro | Especificación |
-|-----------|----------------|
-| **Tipo** | 9-DOF (Giroscopio 3-axis + Acelerómetro 3-axis + Magnetómetro 3-axis) |
-| **Tasa de Muestreo** | 50-100 Hz (suficiente para arquitectura) |
-| **Interfaz** | I2C, SPI, o UART |
-
-**Integración:**
-- Generalmente integrado en el flight controller (acceso vía MAVROS)
-- O IMU independiente conectado a la computadora
-
-**Topics ROS 2:**
-- `/drone/imu` (tipo `sensor_msgs/Imu`)
-- Odometría derivada: `/drone/odom` (tipo `nav_msgs/Odometry`)
+**Nota:** El GPS y IMU no son requeridos directamente por la arquitectura, ya que la odometría generalmente se deriva de estos sensores en el flight controller. Si tu flight controller no proporciona odometría, necesitarás un nodo ROS 2 que la genere a partir de GPS/IMU.
 
 ### 3.2 UGV - Sensores Requeridos
 
@@ -514,10 +496,6 @@ radio:
 ```bash
 /rover/cmd_vel              # Comandos de velocidad (geometry_msgs/Twist)
 /rover/odom                 # Odometría (nav_msgs/Odometry)
-/rover/gps/fix              # Posición GPS (sensor_msgs/NavSatFix)
-/rover/range                # Sensor de rango (sensor_msgs/Range) o
-/rover/scan                 # LiDAR scan (sensor_msgs/LaserScan)
-/rover/camera/image_raw     # Imagen de cámara (sensor_msgs/Image)
 ```
 
 **Topics de Comunicación Inter-Agente:**
@@ -907,37 +885,13 @@ sudo chmod 666 /dev/ttyUSB0  # o ttyACM0
 
 #### 7.2.2 Configurar Sensores
 
-**Cámara:**
+**Odometría:**
 ```bash
-# Verificar detección
-lsusb | grep -i camera
-v4l2-ctl --list-devices
+# Verificar publicación de odometría
+ros2 topic echo /rover/odom
 
-# Probar captura
-v4l2-ctl --device=/dev/video0 --stream-mmap --stream-count=1 --stream-to=test.raw
-```
-
-**LiDAR:**
-```bash
-# Verificar detección
-lsusb | grep -i lidar
-
-# Probar con driver del fabricante (ej: rplidar_ros)
-ros2 launch rplidar_ros rplidar.launch.py
-```
-
-**GPS:**
-```bash
-# Verificar puerto GPS
-sudo apt install -y gpsd gpsd-clients
-sudo systemctl stop gpsd.socket
-sudo systemctl disable gpsd.socket
-
-# Configurar gpsd
-sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
-
-# Probar GPS
-cgps -s
+# Verificar tasa de publicación
+ros2 topic hz /rover/odom
 ```
 
 ### 7.3 Configuración de Transformaciones (TF)
@@ -955,8 +909,7 @@ ros2 run tf2_tools view_frames
 
 **Frames requeridos:**
 - `map` → `odom` → `drone/base_link` o `rover/base_link`
-- `drone/base_link` → `drone/camera_link` (UAV)
-- `rover/base_link` → `rover/camera_link` (UGV)
+- `drone/base_link` → `drone/camera_link` (UAV - solo si se usa cámara)
 
 ---
 
@@ -994,14 +947,12 @@ python3 ../robotic-ai-agents/simulator/microsim/scripts/uav_langgraph_controller
 # Ver topics disponibles
 ros2 topic list
 
-# Ver datos de GPS
-ros2 topic echo /drone/gps/fix
-
-# Ver imágenes de cámara
+# Ver imágenes de cámara (UAV)
 ros2 topic echo /drone/camera/image_raw --no-arr
 
 # Ver odometría
-ros2 topic echo /drone/odom
+ros2 topic echo /drone/odom  # UAV
+ros2 topic echo /rover/odom  # UGV
 ```
 
 #### 8.2.2 Verificar Comunicación
@@ -1132,19 +1083,19 @@ ros2 topic echo /drone/camera/image_raw
 - Verificar permisos: `sudo usermod -a -G video $USER`
 - Verificar configuración del nodo de cámara
 
-#### Problema: GPS no publica datos
+#### Problema: Odometría no publica datos
 
 **Diagnóstico:**
 ```bash
-ros2 topic echo /drone/gps/fix
-cgps -s  # Si está disponible
+ros2 topic echo /drone/odom  # UAV
+ros2 topic echo /rover/odom  # UGV
 ```
 
 **Soluciones:**
-- Verificar conexión del módulo GPS
-- Mover a área abierta (mejor recepción)
-- Esperar > 60 segundos para adquisición inicial
-- Verificar configuración de baudrate
+- Verificar que el flight controller (UAV) o controlador de movimiento (UGV) esté funcionando
+- Verificar conexión serial/Ethernet con el controlador
+- Revisar configuración de MAVROS (UAV) o nodo de odometría (UGV)
+- Verificar permisos de puerto serial
 
 ### 9.4 Problemas de Software
 
